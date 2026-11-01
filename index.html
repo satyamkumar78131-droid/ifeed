@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#09090f">
-  <title>iFeed — Watch & Share</title>
+  <title>iFeed</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,25 +13,25 @@
   <header class="topbar">
     <a class="logo" href="#">i<span>Feed</span></a>
     <div class="top-actions">
-      <button id="searchBtn" class="top-icon" aria-label="Search">⌕</button>
+      <button id="searchBtn" class="top-icon">⌕</button>
       <button id="uploadBtn" class="upload-top">＋ Upload</button>
     </div>
   </header>
 
   <main id="feed">
-
     <section class="reel" data-id="reel1">
-      <video class="reel-video"
-        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
-        autoplay muted loop playsinline></video>
-
+      <video class="reel-video" muted loop playsinline
+        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
       <div class="video-shade"></div>
       <div class="reel-details">
-        <div class="creator"><div class="avatar">S</div><b>@creator_one</b><button class="follow-btn">Follow</button></div>
-        <p class="caption">Welcome to iFeed ✨ Your daily dose of creativity.</p>
+        <div class="creator">
+          <div class="avatar">S</div>
+          <b>@creator_one</b>
+          <button class="follow-btn">Follow</button>
+        </div>
+        <p class="caption">Welcome to iFeed ✨</p>
         <p class="music">♫ Original audio · iFeed</p>
       </div>
-
       <div class="reel-actions">
         <button class="action likeBtn"><span>♡</span><small class="likeCount">0</small></button>
         <button class="action commentBtn"><span>▢</span><small>Comment</small></button>
@@ -39,17 +40,18 @@
     </section>
 
     <section class="reel" data-id="reel2">
-      <video class="reel-video"
-        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
-        autoplay muted loop playsinline></video>
-
+      <video class="reel-video" muted loop playsinline
+        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
       <div class="video-shade"></div>
       <div class="reel-details">
-        <div class="creator"><div class="avatar">A</div><b>@amazing_world</b><button class="follow-btn">Follow</button></div>
-        <p class="caption">Discover something beautiful every day 🌍</p>
+        <div class="creator">
+          <div class="avatar">A</div>
+          <b>@amazing_world</b>
+          <button class="follow-btn">Follow</button>
+        </div>
+        <p class="caption">Discover something beautiful 🌍</p>
         <p class="music">♫ Trending audio · iFeed</p>
       </div>
-
       <div class="reel-actions">
         <button class="action likeBtn"><span>♡</span><small class="likeCount">0</small></button>
         <button class="action commentBtn"><span>▢</span><small>Comment</small></button>
@@ -58,24 +60,24 @@
     </section>
 
     <section class="reel" data-id="reel3">
-      <video class="reel-video"
-        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
-        autoplay muted loop playsinline></video>
-
+      <video class="reel-video" muted loop playsinline
+        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
       <div class="video-shade"></div>
       <div class="reel-details">
-        <div class="creator"><div class="avatar">V</div><b>@viral_vibes</b><button class="follow-btn">Follow</button></div>
+        <div class="creator">
+          <div class="avatar">V</div>
+          <b>@viral_vibes</b>
+          <button class="follow-btn">Follow</button>
+        </div>
         <p class="caption">Make every moment count! 🚀</p>
         <p class="music">♫ Original audio · iFeed</p>
       </div>
-
       <div class="reel-actions">
         <button class="action likeBtn"><span>♡</span><small class="likeCount">0</small></button>
         <button class="action commentBtn"><span>▢</span><small>Comment</small></button>
         <button class="action shareBtn"><span>➤</span><small>Share</small></button>
       </div>
     </section>
-
   </main>
 
   <input type="file" id="videoInput" accept="video/*" hidden>
@@ -88,6 +90,88 @@
     <button id="profileBtn" class="nav-item"><span>◉</span><small>Profile</small></button>
   </nav>
 
+  <!-- PROFILE SCREEN -->
+  <section id="profileScreen" class="app-screen">
+    <div class="screen-header">
+      <button id="backToFeed">←</button>
+      <h2>Profile</h2>
+      <button id="editProfileBtn">Edit</button>
+    </div>
+
+    <div class="profile-content">
+      <div class="profile-avatar">i</div>
+      <h2 id="profileName">iFeed</h2>
+      <p id="profileUsername">@ifeed</p>
+
+      <div class="profile-stats">
+        <div><b id="postCount">0</b><small>Posts</small></div>
+        <div><b>0</b><small>Followers</small></div>
+        <div><b>0</b><small>Following</small></div>
+      </div>
+
+      <p class="profile-bio" id="profileBio">Welcome to my iFeed profile ✨</p>
+
+      <button id="editProfileMain" class="profile-edit">Edit Profile</button>
+      <button id="loginOpenBtn" class="profile-login">Login / Sign up</button>
+
+      <div class="profile-tabs">
+        <span>▦</span>
+        <span>♡</span>
+        <span>▣</span>
+      </div>
+
+      <p class="empty-profile">Your videos will appear here.</p>
+    </div>
+  </section>
+
+  <!-- EDIT PROFILE SCREEN -->
+  <section id="editScreen" class="app-screen">
+    <div class="screen-header">
+      <button id="cancelEdit">←</button>
+      <h2>Edit Profile</h2>
+      <button id="saveProfileBtn">Save</button>
+    </div>
+
+    <div class="edit-form">
+      <label>Display name</label>
+      <input id="editName" maxlength="30" value="iFeed">
+
+      <label>Username</label>
+      <input id="editUsername" maxlength="20" value="ifeed">
+
+      <label>Bio</label>
+      <textarea id="editBio" maxlength="100">Welcome to my iFeed profile ✨</textarea>
+    </div>
+  </section>
+
+  <!-- LOGIN SCREEN -->
+  <section id="loginScreen" class="app-screen">
+    <div class="screen-header">
+      <button id="closeLogin">←</button>
+      <h2>Welcome to iFeed</h2>
+      <span></span>
+    </div>
+
+    <div class="login-content">
+      <div class="login-logo">i<span>Feed</span></div>
+      <h2>Join the community</h2>
+      <p>Login UI preview</p>
+
+      <label>Email address</label>
+      <input type="email" id="loginEmail" placeholder="Enter your email">
+
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="Enter password">
+
+      <button id="loginBtn" class="login-submit">Continue</button>
+
+      <p class="login-note">
+        Demo interface only. Real account authentication will be added with a secure backend.
+      </p>
+    </div>
+  </section>
+
+  <!-- COMMENTS -->
   <div id="commentModal" class="modal">
     <div class="modal-sheet">
       <div class="modal-head">
