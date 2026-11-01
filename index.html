@@ -1,12 +1,53 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iFeed</title>
+    <title>iFeed - Short Videos</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Welcome to iFeed</h1>
-    <p>Your Videos. Your Feed. Your World.</p>
+
+<header class="topbar">
+    <h2>iFeed</h2>
+    <div>
+        <button id="searchBtn">⌕</button>
+        <button id="uploadBtn">＋</button>
+    </div>
+</header>
+
+<main id="feed">
+
+    <section class="reel">
+        <video controls loop playsinline
+        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4">
+        </video>
+
+        <div class="reel-info">
+            <h3>@ifeed_official</h3>
+            <p>Welcome to iFeed! Your Videos, Your World.</p>
+        </div>
+
+        <div class="actions">
+            <button class="likeBtn">♡ <span>0</span></button>
+            <button class="commentBtn">💬</button>
+            <button class="shareBtn">↗</button>
+        </div>
+    </section>
+
+</main>
+
+<input type="file" id="videoInput" accept="video/*" hidden>
+
+<nav class="bottom-nav">
+    <button>⌂<small>Home</small></button>
+    <button id="exploreBtn">⌕<small>Explore</small></button>
+    <button id="navUpload">＋<small>Upload</small></button>
+    <button>♡<small>Activity</small></button>
+    <button>◉<small>Profile</small></button>
+</nav>
+
+<script src="script.js"></script>
 </body>
 </html>
