@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iFeed - Short Videos</title>
+    <meta name="theme-color" content="#080808">
+    <title>iFeed - Reels</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,15 +21,40 @@
 <main id="feed">
 
     <section class="reel">
-        <video controls loop playsinline
-        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4">
-        </video>
-
+        <video class="reel-video" autoplay muted loop playsinline
+        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
         <div class="reel-info">
             <h3>@ifeed_official</h3>
-            <p>Welcome to iFeed! Your Videos, Your World.</p>
+            <p>Welcome to iFeed! 🌸</p>
         </div>
+        <div class="actions">
+            <button class="likeBtn">♡ <span>0</span></button>
+            <button class="commentBtn">💬</button>
+            <button class="shareBtn">↗</button>
+        </div>
+    </section>
 
+    <section class="reel">
+        <video class="reel-video" muted loop playsinline
+        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
+        <div class="reel-info">
+            <h3>@ifeed_creator</h3>
+            <p>Discover something new on iFeed! ✨</p>
+        </div>
+        <div class="actions">
+            <button class="likeBtn">♡ <span>0</span></button>
+            <button class="commentBtn">💬</button>
+            <button class="shareBtn">↗</button>
+        </div>
+    </section>
+
+    <section class="reel">
+        <video class="reel-video" muted loop playsinline
+        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
+        <div class="reel-info">
+            <h3>@ifeed_world</h3>
+            <p>Your Videos. Your Feed. Your World. ❤️</p>
+        </div>
         <div class="actions">
             <button class="likeBtn">♡ <span>0</span></button>
             <button class="commentBtn">💬</button>
