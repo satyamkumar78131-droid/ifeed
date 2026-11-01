@@ -1,79 +1,107 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#080808">
-    <title>iFeed - Reels</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#09090f">
+  <title>iFeed — Watch & Share</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header class="topbar">
-    <h2>iFeed</h2>
-    <div>
-        <button id="searchBtn">⌕</button>
-        <button id="uploadBtn">＋</button>
+  <header class="topbar">
+    <a class="logo" href="#">i<span>Feed</span></a>
+    <div class="top-actions">
+      <button id="searchBtn" class="top-icon" aria-label="Search">⌕</button>
+      <button id="uploadBtn" class="upload-top">＋ Upload</button>
     </div>
-</header>
+  </header>
 
-<main id="feed">
+  <main id="feed">
 
-    <section class="reel">
-        <video class="reel-video" autoplay muted loop playsinline
-        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
-        <div class="reel-info">
-            <h3>@ifeed_official</h3>
-            <p>Welcome to iFeed! 🌸</p>
-        </div>
-        <div class="actions">
-            <button class="likeBtn">♡ <span>0</span></button>
-            <button class="commentBtn">💬</button>
-            <button class="shareBtn">↗</button>
-        </div>
+    <section class="reel" data-id="reel1">
+      <video class="reel-video"
+        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+        autoplay muted loop playsinline></video>
+
+      <div class="video-shade"></div>
+      <div class="reel-details">
+        <div class="creator"><div class="avatar">S</div><b>@creator_one</b><button class="follow-btn">Follow</button></div>
+        <p class="caption">Welcome to iFeed ✨ Your daily dose of creativity.</p>
+        <p class="music">♫ Original audio · iFeed</p>
+      </div>
+
+      <div class="reel-actions">
+        <button class="action likeBtn"><span>♡</span><small class="likeCount">0</small></button>
+        <button class="action commentBtn"><span>▢</span><small>Comment</small></button>
+        <button class="action shareBtn"><span>➤</span><small>Share</small></button>
+      </div>
     </section>
 
-    <section class="reel">
-        <video class="reel-video" muted loop playsinline
-        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
-        <div class="reel-info">
-            <h3>@ifeed_creator</h3>
-            <p>Discover something new on iFeed! ✨</p>
-        </div>
-        <div class="actions">
-            <button class="likeBtn">♡ <span>0</span></button>
-            <button class="commentBtn">💬</button>
-            <button class="shareBtn">↗</button>
-        </div>
+    <section class="reel" data-id="reel2">
+      <video class="reel-video"
+        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+        autoplay muted loop playsinline></video>
+
+      <div class="video-shade"></div>
+      <div class="reel-details">
+        <div class="creator"><div class="avatar">A</div><b>@amazing_world</b><button class="follow-btn">Follow</button></div>
+        <p class="caption">Discover something beautiful every day 🌍</p>
+        <p class="music">♫ Trending audio · iFeed</p>
+      </div>
+
+      <div class="reel-actions">
+        <button class="action likeBtn"><span>♡</span><small class="likeCount">0</small></button>
+        <button class="action commentBtn"><span>▢</span><small>Comment</small></button>
+        <button class="action shareBtn"><span>➤</span><small>Share</small></button>
+      </div>
     </section>
 
-    <section class="reel">
-        <video class="reel-video" muted loop playsinline
-        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
-        <div class="reel-info">
-            <h3>@ifeed_world</h3>
-            <p>Your Videos. Your Feed. Your World. ❤️</p>
-        </div>
-        <div class="actions">
-            <button class="likeBtn">♡ <span>0</span></button>
-            <button class="commentBtn">💬</button>
-            <button class="shareBtn">↗</button>
-        </div>
+    <section class="reel" data-id="reel3">
+      <video class="reel-video"
+        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+        autoplay muted loop playsinline></video>
+
+      <div class="video-shade"></div>
+      <div class="reel-details">
+        <div class="creator"><div class="avatar">V</div><b>@viral_vibes</b><button class="follow-btn">Follow</button></div>
+        <p class="caption">Make every moment count! 🚀</p>
+        <p class="music">♫ Original audio · iFeed</p>
+      </div>
+
+      <div class="reel-actions">
+        <button class="action likeBtn"><span>♡</span><small class="likeCount">0</small></button>
+        <button class="action commentBtn"><span>▢</span><small>Comment</small></button>
+        <button class="action shareBtn"><span>➤</span><small>Share</small></button>
+      </div>
     </section>
 
-</main>
+  </main>
 
-<input type="file" id="videoInput" accept="video/*" hidden>
+  <input type="file" id="videoInput" accept="video/*" hidden>
 
-<nav class="bottom-nav">
-    <button>⌂<small>Home</small></button>
-    <button id="exploreBtn">⌕<small>Explore</small></button>
-    <button id="navUpload">＋<small>Upload</small></button>
-    <button>♡<small>Activity</small></button>
-    <button>◉<small>Profile</small></button>
-</nav>
+  <nav class="bottom-nav">
+    <button id="homeBtn" class="nav-item active"><span>⌂</span><small>Home</small></button>
+    <button id="exploreBtn" class="nav-item"><span>⌕</span><small>Explore</small></button>
+    <button id="navUpload" class="nav-add">＋</button>
+    <button id="activityBtn" class="nav-item"><span>♡</span><small>Activity</small></button>
+    <button id="profileBtn" class="nav-item"><span>◉</span><small>Profile</small></button>
+  </nav>
 
-<script src="script.js"></script>
+  <div id="commentModal" class="modal">
+    <div class="modal-sheet">
+      <div class="modal-head">
+        <b>Comments</b>
+        <button id="closeComments">✕</button>
+      </div>
+      <div id="commentList" class="comment-list"></div>
+      <form id="commentForm" class="comment-form">
+        <input id="commentInput" type="text" placeholder="Add a comment..." maxlength="200">
+        <button type="submit">Post</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
