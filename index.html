@@ -5,9 +5,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#09090f">
+  <meta name="description" content="Discover and share short videos on iFeed.">
   <title>iFeed</title>
+
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
 </head>
+
 <body>
 
   <header class="topbar">
@@ -19,6 +23,7 @@
   </header>
 
   <main id="feed">
+
     <section class="reel" data-id="reel1">
       <video class="reel-video" muted loop playsinline
         src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
@@ -78,6 +83,7 @@
         <button class="action shareBtn"><span>➤</span><small>Share</small></button>
       </div>
     </section>
+
   </main>
 
   <input type="file" id="videoInput" accept="video/*" hidden>
@@ -90,7 +96,6 @@
     <button id="profileBtn" class="nav-item"><span>◉</span><small>Profile</small></button>
   </nav>
 
-  <!-- PROFILE SCREEN -->
   <section id="profileScreen" class="app-screen">
     <div class="screen-header">
       <button id="backToFeed">←</button>
@@ -115,16 +120,13 @@
       <button id="loginOpenBtn" class="profile-login">Login / Sign up</button>
 
       <div class="profile-tabs">
-        <span>▦</span>
-        <span>♡</span>
-        <span>▣</span>
+        <span>▦</span><span>♡</span><span>▣</span>
       </div>
 
       <p class="empty-profile">Your videos will appear here.</p>
     </div>
   </section>
 
-  <!-- EDIT PROFILE SCREEN -->
   <section id="editScreen" class="app-screen">
     <div class="screen-header">
       <button id="cancelEdit">←</button>
@@ -144,7 +146,6 @@
     </div>
   </section>
 
-  <!-- LOGIN SCREEN -->
   <section id="loginScreen" class="app-screen">
     <div class="screen-header">
       <button id="closeLogin">←</button>
@@ -166,12 +167,11 @@
       <button id="loginBtn" class="login-submit">Continue</button>
 
       <p class="login-note">
-        Demo interface only. Real account authentication will be added with a secure backend.
+        Demo interface only. Secure account authentication will be added later.
       </p>
     </div>
   </section>
 
-  <!-- COMMENTS -->
   <div id="commentModal" class="modal">
     <div class="modal-sheet">
       <div class="modal-head">
@@ -180,12 +180,24 @@
       </div>
       <div id="commentList" class="comment-list"></div>
       <form id="commentForm" class="comment-form">
-        <input id="commentInput" type="text" placeholder="Add a comment..." maxlength="200">
+        <input id="commentInput" type="text"
+          placeholder="Add a comment..." maxlength="200">
         <button type="submit">Post</button>
       </form>
     </div>
   </div>
 
   <script src="script.js"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js")
+          .then(() => console.log("iFeed offline support ready"))
+          .catch(error => console.log("Service Worker error:", error));
+      });
+    }
+  </script>
+
 </body>
 </html>
