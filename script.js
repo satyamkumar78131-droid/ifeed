@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentReel = null;
   let observer = null;
 
-  // SAFE LOCAL STORAGE
+  // STORAGE HELPERS
   function getSaved(key, fallback) {
     try {
       return JSON.parse(localStorage.getItem(key)) ?? fallback;
@@ -26,6 +26,139 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // SCREEN NAVIGATION
+  const screens = [
+    "profileScreen",
+    "editScreen",
+    "loginScreen"
+  ];
+
+  function showScreen(id) {
+    screens.forEach(screenId => {
+      document.getElementById(screenId).classList.remove("show");
+    });
+
+    document.getElementById(id).classList.add("show");
+  }
+
+  function closeScreens() {
+    screens.forEach(id => {
+      document.getElementById(id).classList.remove("show");
+    });
+  }
+
+  // PROFILE DATA
+  function loadProfile() {
+    const profile = getSaved("ifeed_profile", {
+      name: "iFeed",
+      username: "ifeed",
+      bio: "Welcome to my iFeed profile ✨"
+    });
+
+    document.getElementById("profileName").textContent =
+      profile.name;
+
+    document.getElementById("profileUsername").textContent =
+      "@" + profile.username;
+
+    document.getElementById("profileBio").textContent =
+      profile.bio;
+
+    document.getElementById("editName").value =
+      profile.name;
+
+    document.getElementById("editUsername").value =
+      profile.username;
+
+    document.getElementById("editBio").value =
+      profile.bio;
+
+    document.getElementById("postCount").textContent =
+      document.querySelectorAll(".reel").length;
+  }
+
+  function openEditProfile() {
+    loadProfile();
+    showScreen("editScreen");
+  }
+
+  function saveProfile() {
+    const name = document.getElementById("editName").value.trim();
+    const username = document.getElementById("editUsername").value
+      .trim()
+      .replace(/^@/, "")
+      .replace(/[^a-zA-Z0-9_.]/g, "");
+
+    const bio = document.getElementById("editBio").value.trim();
+
+    if (!name || !username) {
+      alert("Name and username are required.");
+      return;
+    }
+
+    const profile = { name, username, bio };
+
+    save("ifeed_profile", profile);
+    loadProfile();
+    showScreen("profileScreen");
+    alert("Profile updated!");
+  }
+
+  document.getElementById("profileBtn").onclick = () => {
+    loadProfile();
+    showScreen("profileScreen");
+  };
+
+  document.getElementById("backToFeed").onclick = closeScreens;
+  document.getElementById("cancelEdit").onclick = () => {
+    showScreen("profileScreen");
+  };
+
+  document.getElementById("editProfileBtn").onclick =
+    openEditProfile;
+
+  document.getElementById("editProfileMain").onclick =
+    openEditProfile;
+
+  document.getElementById("saveProfileBtn").onclick =
+    saveProfile;
+
+  // DEMO LOGIN UI
+  document.getElementById("loginOpenBtn").onclick = () => {
+    showScreen("loginScreen");
+  };
+
+  document.getElementById("closeLogin").onclick = () => {
+    showScreen("profileScreen");
+  };
+
+  document.getElementById("loginBtn").onclick = () => {
+    const email = document.getElementById("loginEmail")
+      .value.trim();
+
+    const password = document.getElementById("loginPassword")
+      .value;
+
+    if (!email || !password) {
+      alert("Please enter your email and password.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+
+    if (password.length < 6) {
+      alert("Password must contain at least 6 characters.");
+      return;
+    }
+
+    alert(
+      "This is only a demo login screen. Real account login is not connected yet."
+    );
+  };
+
   // LIKE SYSTEM
   function setupLike(reel) {
     const id = reel.dataset.id;
@@ -38,7 +171,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function update() {
       button.classList.toggle("liked", liked);
-      button.querySelector("span").textContent = liked ? "♥" : "♡";
+      button.querySelector("span").textContent =
+        liked ? "♥" : "♡";
+
       countElement.textContent = count;
     }
 
@@ -64,7 +199,8 @@ document.addEventListener("DOMContentLoaded", () => {
     commentList.innerHTML = "";
 
     if (!comments.length) {
-      commentList.textContent = "No comments yet. Be the first!";
+      commentList.textContent =
+        "No comments yet. Be the first!";
       return;
     }
 
@@ -93,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  document.getElementById("commentForm").addEventListener("submit", event => {
+  document.getElementById("commentForm").onsubmit = event => {
     event.preventDefault();
 
     const message = commentInput.value.trim();
@@ -101,14 +237,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!message || !currentReel) return;
 
     const allComments = getSaved("ifeed_comments", {});
-    allComments[currentReel] = allComments[currentReel] || [];
+    allComments[currentReel] =
+      allComments[currentReel] || [];
+
     allComments[currentReel].push(message);
 
     save("ifeed_comments", allComments);
 
     commentInput.value = "";
     showComments(currentReel);
-  });
+  };
 
   document.getElementById("closeComments").onclick = () => {
     modal.classList.remove("show");
@@ -132,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
           await navigator.share(shareData);
         } catch (error) {
-          // Sharing cancelled by user
+          // Sharing cancelled.
         }
       } else {
         alert("Sharing is not supported in this browser.");
@@ -140,17 +278,31 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // VIDEO PLAYBACK SYSTEM
+  // SINGLE VIDEO PLAYBACK
+  function pauseAllExcept(activeVideo) {
+    document.querySelectorAll(".reel-video").forEach(video => {
+      if (video !== activeVideo) {
+        video.pause();
+      }
+    });
+  }
+
+  function activateVideo(video) {
+    if (!video) return;
+
+    pauseAllExcept(video);
+    video.play().catch(() => {});
+  }
+
   function setupVideo(reel) {
     const video = reel.querySelector(".reel-video");
 
-    // All videos start paused.
     video.autoplay = false;
     video.pause();
 
     video.addEventListener("click", () => {
       if (video.paused) {
-        video.play().catch(() => {});
+        activateVideo(video);
       } else {
         video.pause();
       }
@@ -161,7 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // SETUP EACH REEL
+  // SETUP REEL
   function setupReel(reel) {
     setupLike(reel);
     setupComments(reel);
@@ -169,39 +321,53 @@ document.addEventListener("DOMContentLoaded", () => {
     setupVideo(reel);
   }
 
-  // ONLY ONE VIDEO CAN PLAY AT A TIME
-  function pauseAllExcept(activeVideo) {
-    document.querySelectorAll(".reel-video").forEach(video => {
-      if (video !== activeVideo && !video.paused) {
-        video.pause();
+  // FIND MOST VISIBLE VIDEO
+  function updateActiveVideo() {
+    const videos = [
+      ...document.querySelectorAll(".reel-video")
+    ];
+
+    const feedRect = feed.getBoundingClientRect();
+
+    let bestVideo = null;
+    let bestRatio = 0;
+
+    videos.forEach(video => {
+      const rect = video.getBoundingClientRect();
+
+      const visibleHeight = Math.max(
+        0,
+        Math.min(rect.bottom, feedRect.bottom) -
+        Math.max(rect.top, feedRect.top)
+      );
+
+      const ratio = rect.height
+        ? visibleHeight / rect.height
+        : 0;
+
+      if (ratio > bestRatio) {
+        bestRatio = ratio;
+        bestVideo = video;
       }
     });
+
+    if (bestVideo && bestRatio >= 0.65) {
+      activateVideo(bestVideo);
+    } else {
+      pauseAllExcept(null);
+    }
   }
 
-  observer = new IntersectionObserver(entries => {
-    let activeVideo = null;
-    let maxVisibility = 0;
-
-    entries.forEach(entry => {
-      if (
-        entry.isIntersecting &&
-        entry.intersectionRatio > maxVisibility
-      ) {
-        maxVisibility = entry.intersectionRatio;
-        activeVideo = entry.target;
-      }
-    });
-
-    if (activeVideo && maxVisibility >= 0.65) {
-      pauseAllExcept(activeVideo);
-      activeVideo.play().catch(() => {});
-    }
+  observer = new IntersectionObserver(() => {
+    updateActiveVideo();
   }, {
     root: feed,
-    threshold: [0, 0.65, 1]
+    threshold: [0, 0.25, 0.65, 1]
   });
 
-  // UPLOAD SYSTEM
+  feed.addEventListener("scroll", updateActiveVideo);
+
+  // VIDEO UPLOAD
   function openUpload() {
     videoInput.click();
   }
@@ -234,8 +400,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <div class="reel-details">
         <div class="creator">
-          <div class="avatar">Y</div>
-          <b>@you</b>
+          <div class="avatar">i</div>
+          <b>@ifeed</b>
           <button class="follow-btn">Following</button>
         </div>
 
@@ -266,12 +432,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     reel.querySelector(".caption").textContent = file.name;
 
-    // Pause current videos before adding the new reel.
-    pauseAllExcept(null);
-
     feed.appendChild(reel);
-
     setupReel(reel);
+
+    document.getElementById("postCount").textContent =
+      document.querySelectorAll(".reel").length;
 
     reel.scrollIntoView({
       behavior: "smooth",
@@ -281,11 +446,17 @@ document.addEventListener("DOMContentLoaded", () => {
     videoInput.value = "";
   });
 
-  // NAVIGATION
+  // HOME
   document.getElementById("homeBtn").onclick = () => {
-    feed.scrollTo({ top: 0, behavior: "smooth" });
+    closeScreens();
+
+    feed.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
   };
 
+  // SEARCH
   document.getElementById("searchBtn").onclick = () => {
     const query = prompt("Search creators or captions:");
 
@@ -294,31 +465,44 @@ document.addEventListener("DOMContentLoaded", () => {
     const reels = [...document.querySelectorAll(".reel")];
 
     const found = reels.find(reel =>
-      reel.textContent.toLowerCase().includes(query.toLowerCase())
+      reel.textContent.toLowerCase().includes(
+        query.toLowerCase()
+      )
     );
 
     if (found) {
+      closeScreens();
       found.scrollIntoView({ behavior: "smooth" });
     } else {
       alert("No matching video found.");
     }
   };
 
+  // EXPLORE
   document.getElementById("exploreBtn").onclick = () => {
-    feed.scrollTo({ top: 0, behavior: "smooth" });
+    closeScreens();
+
+    feed.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+
     alert("Explore: More videos coming soon!");
   };
 
+  // ACTIVITY
   document.getElementById("activityBtn").onclick = () => {
-    alert("Your likes and comments are saved on this device.");
+    const likes = getSaved("ifeed_likes", {});
+    const totalLikes = Object.values(likes)
+      .filter(item => item.liked).length;
+
+    alert("Your liked videos: " + totalLikes);
   };
 
-  document.getElementById("profileBtn").onclick = () => {
-    alert("Profile: @you");
-  };
-
-  // INITIALIZE EXISTING VIDEOS
+  // INITIALIZE
   document.querySelectorAll(".reel").forEach(setupReel);
 
-  console.log("iFeed Modern V3 Ready!");
+  loadProfile();
+
+  console.log("iFeed V4 Ready!");
 });
