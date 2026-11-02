@@ -1,0 +1,12 @@
+
+{
+  "name": "iFeed - Short Videos",
+  "short_name": "iFeed",
+  "description": "Discover and share short videos.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#09090f",
+  "theme_color": "#09090f"
+}
