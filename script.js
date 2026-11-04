@@ -1,696 +1,191 @@
+const BASE = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/';
+const SAMPLE = [
+  { id: 's1', title: 'Big Buck Bunny', author: 'blender', src: BASE + 'BigBuckBunny.mp4' },
+  { id: 's2', title: 'Elephants Dream', author: 'blender', src: BASE + 'ElephantsDream.mp4' },
+  { id: 's3', title: 'For Bigger Blazes', author: 'google', src: BASE + 'ForBiggerBlazes.mp4' },
+  { id: 's4', title: 'Sintel', author: 'blender', src: BASE + 'Sintel.mp4' },
+  { id: 's5', title: 'Tears of Steel', author: 'blender', src: BASE + 'TearsOfSteel.mp4' },
+];
 
-// ===== iFeed Helpers =====
-const $ = (sel, root = document) => root.querySelector(sel);
-const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
 
-const feed = $("#feed");
-const modal = $("#commentModal");
-const commentList = $("#commentList");
-const commentForm = $("#commentForm");
-const commentInput = $("#commentInput");
-const videoInput = $("#videoInput");
-
-const screens = {
-  profile: $("#profileScreen"),
-  edit: $("#editScreen"),
-  login: $("#loginScreen"),
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); },
 };
 
-// ===== Persistent Like Storage =====
-const LIKE_KEY = "ifeed_liked_videos";
+let custom = store.get('vibe.custom', []);
+let videos = [...SAMPLE, ...custom];
+let likes = new Set(store.get('vibe.likes', []));
+let tab = 'home';
+let query = '';
+let muted = true;
 
-function loadLikes() {
-  try {
-    const data = JSON.parse(localStorage.getItem(LIKE_KEY) || "[]");
-    return new Set(Array.isArray(data) ? data : []);
-  } catch {
-    return new Set();
-  }
+const feed = $('#feed');
+const HEART = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9C.9 8.7 2.7 4.5 6.7 4.5c2.2 0 3.7 1.3 5.3 3.1 1.6-1.8 3.1-3.1 5.3-3.1 4 0 5.8 4.2 4.3 7.5-2.1 4.4-9.6 9-9.6 9z"/></svg>';
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-const likedVideos = loadLikes();
-
-function saveLikes() {
-  localStorage.setItem(LIKE_KEY, JSON.stringify([...likedVideos]));
+function ytId(url) {
+  const m = url.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);
+  return m ? m[1] : null;
 }
 
-const state = {
-  loggedIn: false,
-  muted: true,
-  currentReelId: null,
-  postCount: 0,
-  profile: {
-    name: "iFeed",
-    username: "@ifeed",
-    bio: "Welcome to my iFeed profile ✨",
-  },
-};
-
-const comments = {};
-const followed = new Set();
-const saved = new Set();
-const watchHistory = [];
-
-// ===== Toast =====
-function showToast(msg) {
-  const t = document.createElement("div");
+function toast(msg) {
+  const t = $('#toast');
   t.textContent = msg;
-
-  Object.assign(t.style, {
-    position: "fixed",
-    bottom: "84px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    background: "rgba(30,30,40,.95)",
-    color: "#fff",
-    padding: "10px 16px",
-    borderRadius: "20px",
-    fontSize: "13px",
-    zIndex: "999",
-    whiteSpace: "nowrap",
-  });
-
-  document.body.appendChild(t);
-
-  setTimeout(() => {
-    t.style.opacity = "0";
-    setTimeout(() => t.remove(), 300);
-  }, 2000);
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 1600);
 }
 
-// ===== Screens =====
-function openScreen(s) {
-  s.classList.add("show");
+function visibleList() {
+  let list = tab === 'saved' ? videos.filter(v => likes.has(v.id)) : videos;
+  if (query) list = list.filter(v => (v.title + ' ' + v.author).toLowerCase().includes(query));
+  return list;
 }
 
-function closeScreen(s) {
-  s.classList.remove("show");
-}
-
-function closeAllScreens() {
-  Object.values(screens).forEach(closeScreen);
-  modal.classList.remove("show");
-}
-
-function setActive(btn) {
-  $$(".nav-item").forEach(b => {
-    b.classList.toggle("active", b === btn);
-  });
-}
-
-function requireLogin() {
-  if (state.loggedIn) return true;
-
-  showToast("Pehle login karein");
-  openScreen(screens.login);
-  return false;
-}
-
-// ===== Reel Actions =====
-function addAction(reel, cls, icon, label, onClick) {
-  const btn = document.createElement("button");
-
-  btn.className = `action ${cls}`;
-  btn.innerHTML = `<span>${icon}</span><small>${label}</small>`;
-
-  btn.addEventListener("click", onClick);
-
-  $(".reel-actions", reel).appendChild(btn);
-  return btn;
-}
-
-function loadVideo(video) {
-  if (!video.getAttribute("src") && video.dataset.src) {
-    video.src = video.dataset.src;
-    video.preload = "auto";
-  }
-}
-
-// ===== Like System =====
-function updateLikeButton(reel) {
-  const id = reel.dataset.id;
-  const likeBtn = $(".likeBtn", reel);
-  const likeCount = $(".likeCount", reel);
-
-  if (!likeBtn || !likeCount) return;
-
-  const liked = likedVideos.has(id);
-
-  likeBtn.classList.toggle("liked", liked);
-  $("span", likeBtn).textContent = liked ? "♥" : "♡";
-
-  // Personal demo count
-  likeCount.textContent = liked ? "1" : "0";
-}
-
-function toggleLike(reel) {
-  if (!requireLogin()) return;
-
-  const id = reel.dataset.id;
-
-  if (likedVideos.has(id)) {
-    likedVideos.delete(id);
-    showToast("Like hata diya");
-  } else {
-    likedVideos.add(id);
-    showToast("Video liked ❤️");
-  }
-
-  saveLikes();
-  updateLikeButton(reel);
-  renderLikedVideos();
-  renderProfile();
-}
-
-// ===== Reel Setup =====
-function setupReel(reel) {
-  const id = reel.dataset.id;
-  const video = $(".reel-video", reel);
-
-  comments[id] ??= [];
-
-  // Lazy loading
-  if (video.getAttribute("src")) {
-    video.dataset.src = video.getAttribute("src");
-    video.removeAttribute("src");
-  }
-
-  video.muted = state.muted;
-  video.preload = "none";
-
-  // Seek bar
-  const seek = document.createElement("input");
-
-  seek.type = "range";
-  seek.min = 0;
-  seek.max = 100;
-  seek.step = 0.1;
-  seek.value = 0;
-  seek.className = "seek";
-
-  Object.assign(seek.style, {
-    position: "absolute",
-    left: "0",
-    bottom: "0",
-    width: "100%",
-    height: "4px",
-    margin: "0",
-    zIndex: "5",
-  });
-
-  reel.appendChild(seek);
-
-  video.addEventListener("timeupdate", () => {
-    if (video.duration) {
-      seek.value = (video.currentTime / video.duration) * 100;
-    }
-  });
-
-  seek.addEventListener("input", () => {
-    if (video.duration) {
-      video.currentTime = (seek.value / 100) * video.duration;
-    }
-  });
-
-  // Play / Pause
-  video.addEventListener("click", () => {
-    video.paused ? video.play() : video.pause();
-  });
-
-  // Watch history
-  video.addEventListener("play", () => {
-    if (watchHistory[0] !== id) {
-      watchHistory.unshift(id);
-      if (watchHistory.length > 50) watchHistory.length = 50;
-    }
-  });
-
-  // Like
-  const likeBtn = $(".likeBtn", reel);
-
-  likeBtn.addEventListener("click", () => {
-    toggleLike(reel);
-  });
-
-  updateLikeButton(reel);
-
-  // Comment
-  $(".commentBtn", reel).addEventListener("click", () => {
-    if (!requireLogin()) return;
-
-    state.currentReelId = id;
-    renderComments(id);
-
-    modal.classList.add("show");
-    commentInput.focus();
-  });
-
-  // Share
-  $(".shareBtn", reel).addEventListener("click", async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "iFeed",
-          text: $(".caption", reel).textContent,
-          url: location.href,
-        });
-      } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(location.href);
-        showToast("Link copy ho gaya");
-      } else {
-        showToast("Sharing unavailable");
-      }
-    } catch (_) {}
-  });
-
-  // Follow
-  const followBtn = $(".follow-btn", reel);
-
-  followBtn.addEventListener("click", () => {
-    if (!requireLogin()) return;
-
-    if (followed.has(id)) followed.delete(id);
-    else followed.add(id);
-
-    followBtn.textContent = followed.has(id) ? "Following" : "Follow";
-  });
-
-  // Mute
-  addAction(
-    reel,
-    "muteBtn",
-    state.muted ? "🔇" : "🔊",
-    "Sound",
-    () => {
-      state.muted = !state.muted;
-
-      $$(".reel-video").forEach(v => {
-        v.muted = state.muted;
-      });
-
-      $$(".muteBtn span").forEach(s => {
-        s.textContent = state.muted ? "🔇" : "🔊";
-      });
-    }
-  );
-
-  // Save
-  const saveBtn = addAction(
-    reel,
-    "saveBtn",
-    "🏷",
-    "Save",
-    () => {
-      if (!requireLogin()) return;
-
-      if (saved.has(id)) saved.delete(id);
-      else saved.add(id);
-
-      const on = saved.has(id);
-
-      saveBtn.classList.toggle("saved", on);
-      $("span", saveBtn).textContent = on ? "🔖" : "🏷";
-
-      showToast(on ? "Video save ho gayi" : "Save hata diya");
-    }
-  );
-
-  // Fullscreen
-  addAction(reel, "fullBtn", "⤢", "Full", () => {
-    const req = video.requestFullscreen || video.webkitRequestFullscreen;
-
-    if (req) req.call(video);
-  });
-}
-
-// ===== Reel Template =====
-function reelTemplate(id) {
-  return `
-    <video class="reel-video" muted loop playsinline preload="metadata"></video>
-    <div class="video-shade"></div>
-
-    <div class="reel-details">
-      <div class="creator">
-        <div class="avatar"></div>
-        <b></b>
-        <button class="follow-btn">Follow</button>
-      </div>
-
-      <p class="caption"></p>
-      <p class="music"></p>
-    </div>
-
-    <div class="reel-actions">
-      <button class="action likeBtn">
-        <span>♡</span>
-        <small class="likeCount">0</small>
-      </button>
-
-      <button class="action commentBtn">
-        <span>▢</span>
-        <small>Comment</small>
-      </button>
-
-      <button class="action shareBtn">
-        <span>➤</span>
-        <small>Share</small>
-      </button>
-    </div>`;
-}
-
-// ===== Observers =====
-const loadObserver = new IntersectionObserver(
-  entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        loadVideo($(".reel-video", e.target));
-      }
-    });
-  },
-  { root: feed, rootMargin: "100% 0px" }
-);
-
-const playObserver = new IntersectionObserver(
-  entries => {
-    entries.forEach(e => {
-      const video = $(".reel-video", e.target);
-
-      if (e.isIntersecting) {
-        loadVideo(video);
-        video.play().catch(() => {});
-      } else {
-        video.pause();
-      }
-    });
-  },
-  { root: feed, threshold: 0.6 }
-);
-
-function registerReel(reel) {
-  setupReel(reel);
-  loadObserver.observe(reel);
-  playObserver.observe(reel);
-}
-
-// ===== Comments =====
-function renderComments(id) {
-  commentList.innerHTML = "";
-
-  const list = comments[id] || [];
+/* ---------- Render ---------- */
+function render() {
+  const list = visibleList();
+  feed.innerHTML = '';
+  io.disconnect();
 
   if (!list.length) {
-    commentList.textContent = "No comments yet. Be the first!";
+    feed.innerHTML = `<div class="empty">${tab === 'saved' ? 'Abhi koi saved video nahi ❤️' : 'Kuch nahi mila 😕'}</div>`;
     return;
   }
 
-  list.forEach(c => {
-    const row = document.createElement("div");
-    row.className = "comment";
-
-    const b = document.createElement("b");
-    b.textContent = c.user;
-
-    row.append(b, document.createTextNode(c.text));
-    commentList.appendChild(row);
-  });
-
-  commentList.scrollTop = commentList.scrollHeight;
-}
-
-function closeComments() {
-  modal.classList.remove("show");
-  state.currentReelId = null;
-}
-
-$("#closeComments").addEventListener("click", closeComments);
-
-modal.addEventListener("click", e => {
-  if (e.target === modal) closeComments();
-});
-
-commentForm.addEventListener("submit", e => {
-  e.preventDefault();
-
-  const text = commentInput.value.trim();
-  const id = state.currentReelId;
-
-  if (!text || !id) return;
-
-  comments[id].push({
-    user: state.profile.username,
-    text,
-  });
-
-  commentInput.value = "";
-  renderComments(id);
-});
-
-// ===== Search & Explore =====
-function searchVideos() {
-  const input = prompt("Caption ya creator ka naam likhein:");
-
-  if (input === null) return;
-
-  const q = input.trim().toLowerCase();
-
-  $$(".reel").forEach(reel => {
-    reel.style.display =
-      !q || reel.textContent.toLowerCase().includes(q) ? "" : "none";
-  });
-
+  for (const v of list) {
+    const yt = ytId(v.src);
+    const el = document.createElement('section');
+    el.className = 'reel';
+    el.dataset.id = v.id;
+    el.innerHTML = `
+      <div class="media">
+        ${yt
+          ? `<iframe data-yt="${yt}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`
+          : `<video src="${esc(v.src)}" playsinline loop muted preload="metadata"></video>`}
+      </div>
+      <div class="shade"></div>
+      <div class="info">
+        <div class="author">@${esc(v.author || 'unknown')}</div>
+        <div class="title">${esc(v.title)}</div>
+      </div>
+      <div class="actions">
+        <button class="act ${likes.has(v.id) ? 'on' : ''}" data-act="like" aria-label="Like">${HEART}</button>
+        <button class="act" data-act="sound" aria-label="Sound">${muted ? '🔇' : '🔊'}</button>
+        <button class="act" data-act="share" aria-label="Share">↗</button>
+      </div>`;
+    feed.appendChild(el);
+    io.observe(el);
+  }
   feed.scrollTop = 0;
-  showToast(q ? `"${q}" ke results` : "Sab videos dikh rahi hain");
 }
 
-$("#searchBtn").addEventListener("click", searchVideos);
+/* ---------- Autoplay only the visible reel ---------- */
+const io = new IntersectionObserver(entries => {
+  for (const e of entries) {
+    const vid = e.target.querySelector('video');
+    const frame = e.target.querySelector('iframe');
+    if (e.isIntersecting) {
+      if (vid) { vid.muted = muted; vid.play().catch(() => {}); }
+      if (frame && !frame.src) {
+        frame.src = `https://www.youtube.com/embed/${frame.dataset.yt}?autoplay=1&playsinline=1&rel=0&mute=${muted ? 1 : 0}`;
+      }
+    } else {
+      if (vid) vid.pause();
+      if (frame && frame.src) frame.src = '';
+    }
+  }
+}, { root: feed, threshold: 0.6 });
 
-$("#exploreBtn").addEventListener("click", () => {
-  setActive($("#exploreBtn"));
-  searchVideos();
-});
+/* ---------- Interactions ---------- */
+feed.addEventListener('click', (e) => {
+  const reel = e.target.closest('.reel');
+  if (!reel) return;
+  const v = videos.find(x => x.id === reel.dataset.id);
+  const btn = e.target.closest('[data-act]');
 
-// ===== Upload =====
-function openUpload() {
-  if (requireLogin()) videoInput.click();
-}
-
-$("#uploadBtn").addEventListener("click", openUpload);
-$("#navUpload").addEventListener("click", openUpload);
-
-videoInput.addEventListener("change", () => {
-  const file = videoInput.files[0];
-
-  if (!file) return;
-
-  const id = `upload_${Date.now()}`;
-  const url = URL.createObjectURL(file);
-
-  feed.insertAdjacentHTML(
-    "beforeend",
-    `<section class="reel" data-id="${id}">${reelTemplate(id)}</section>`
-  );
-
-  const reel = $(`.reel[data-id="${id}"]`);
-
-  $(".reel-video", reel).setAttribute("src", url);
-  $(".avatar", reel).textContent =
-    state.profile.username.charAt(1).toUpperCase();
-
-  $(".creator b", reel).textContent = state.profile.username;
-  $(".caption", reel).textContent = `Uploaded: ${file.name}`;
-  $(".music", reel).textContent =
-    `♫ Original audio · ${state.profile.username}`;
-
-  registerReel(reel);
-
-  state.postCount++;
-  renderProfile();
-
-  reel.scrollIntoView({ behavior: "smooth" });
-
-  videoInput.value = "";
-  showToast("Video upload ho gaya");
-});
-
-// ===== Liked Videos Profile Section =====
-function renderLikedVideos() {
-  const container = $("#likedVideosList");
-
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  const likedIds = [...likedVideos];
-
-  if (!likedIds.length) {
-    container.textContent = "Abhi koi liked video nahi hai. ❤️";
+  if (!btn) {                       // tap on video = play / pause
+    const vid = reel.querySelector('video');
+    if (vid) vid.paused ? vid.play() : vid.pause();
     return;
   }
 
-  likedIds.forEach(id => {
-    const reel = $(`.reel[data-id="${id}"]`);
+  const act = btn.dataset.act;
 
-    if (!reel) return;
-
-    const item = document.createElement("button");
-    item.type = "button";
-    item.className = "liked-video-item";
-
-    const title = $(".caption", reel)?.textContent || "Liked video";
-
-    item.textContent = `❤️ ${title}  →`;
-
-    Object.assign(item.style, {
-      display: "block",
-      width: "100%",
-      padding: "14px",
-      margin: "8px 0",
-      textAlign: "left",
-      borderRadius: "12px",
-      border: "1px solid rgba(255,255,255,.15)",
-      background: "rgba(255,255,255,.06)",
-      color: "inherit",
-      fontSize: "14px",
-      cursor: "pointer",
-    });
-
-    item.addEventListener("click", () => {
-      closeScreen(screens.profile);
-
-      setActive($("#homeBtn"));
-
-      $$(".reel").forEach(r => {
-        r.style.display = "";
-      });
-
-      reel.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-
-      loadVideo($(".reel-video", reel));
-      $(".reel-video", reel).play().catch(() => {});
-    });
-
-    container.appendChild(item);
-  });
-
-  if (!container.children.length) {
-    container.textContent = "Liked videos is device par available nahi hain.";
-  }
-}
-
-// ===== Navigation =====
-$("#homeBtn").addEventListener("click", () => {
-  closeAllScreens();
-  setActive($("#homeBtn"));
-
-  $$(".reel").forEach(r => r.style.display = "");
-
-  feed.scrollTo({ top: 0, behavior: "smooth" });
-});
-
-$("#activityBtn").addEventListener("click", () => {
-  setActive($("#activityBtn"));
-
-  if (!requireLogin()) return;
-
-  showToast("Activity abhi basic demo mein hai");
-});
-
-$("#profileBtn").addEventListener("click", () => {
-  setActive($("#profileBtn"));
-
-  if (!state.loggedIn) {
-    openScreen(screens.login);
-    return;
+  if (act === 'like') {
+    likes.has(v.id) ? likes.delete(v.id) : likes.add(v.id);
+    store.set('vibe.likes', [...likes]);
+    btn.classList.toggle('on', likes.has(v.id));
+    if (tab === 'saved') render();
+    toast(likes.has(v.id) ? 'Saved ❤️' : 'Removed');
   }
 
-  renderProfile();
-  openScreen(screens.profile);
-});
-
-$("#backToFeed").addEventListener("click", () => {
-  closeScreen(screens.profile);
-  setActive($("#homeBtn"));
-});
-
-// ===== Login =====
-$("#closeLogin").addEventListener("click", () => {
-  closeScreen(screens.login);
-});
-
-$("#loginBtn").addEventListener("click", () => {
-  const email = $("#loginEmail").value.trim();
-  const password = $("#loginPassword").value;
-
-  if (!email || !password) {
-    showToast("Email aur password dono bharein");
-    return;
+  if (act === 'sound') {
+    muted = !muted;
+    $$('video').forEach(x => (x.muted = muted));
+    $$('.act[data-act="sound"]').forEach(b => (b.textContent = muted ? '🔇' : '🔊'));
   }
 
-  state.loggedIn = true;
-
-  closeScreen(screens.login);
-  renderProfile();
-  openScreen(screens.profile);
-
-  showToast("Demo login ho gaya");
-});
-
-// ===== Profile =====
-function renderProfile() {
-  $("#profileName").textContent = state.profile.name;
-  $("#profileUsername").textContent = state.profile.username;
-  $("#profileBio").textContent = state.profile.bio;
-  $("#postCount").textContent = state.postCount;
-
-  $("#likedCount").textContent = likedVideos.size;
-
-  renderLikedVideos();
-}
-
-// ===== Edit Profile =====
-function openEdit() {
-  $("#editName").value = state.profile.name;
-  $("#editUsername").value = state.profile.username;
-  $("#editBio").value = state.profile.bio;
-
-  openScreen(screens.edit);
-}
-
-$("#editProfileBtn").addEventListener("click", openEdit);
-$("#editProfileMain").addEventListener("click", openEdit);
-
-$("#cancelEdit").addEventListener("click", () => {
-  closeScreen(screens.edit);
-});
-
-$("#saveProfileBtn").addEventListener("click", () => {
-  const name = $("#editName").value.trim() || "iFeed";
-
-  let username = $("#editUsername").value.trim() || "@ifeed";
-
-  if (!username.startsWith("@")) {
-    username = "@" + username;
+  if (act === 'share') {
+    if (navigator.share) {
+      navigator.share({ title: v.title, url: v.src }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(v.src);
+      toast('Link copy ho gaya');
+    }
   }
+});
 
-  state.profile = {
-    name,
-    username,
-    bio: $("#editBio").value.trim(),
+$('#search').addEventListener('input', (e) => {
+  query = e.target.value.trim().toLowerCase();
+  render();
+});
+
+$$('.bottombar button').forEach(b => b.addEventListener('click', () => {
+  if (b.dataset.tab === 'add') return $('#addDialog').showModal();
+  tab = b.dataset.tab;
+  $$('.bottombar button').forEach(x => x.classList.toggle('active', x === b));
+  render();
+}));
+
+/* ---------- Add video dialog ---------- */
+const dlg = $('#addDialog');
+$('#cancelBtn').addEventListener('click', () => dlg.close());
+
+$('#addForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const title = fd.get('title').trim();
+  const url = fd.get('url').trim();
+  if (!title || !url) return;
+
+  const item = {
+    id: 'u' + Date.now(),
+    title,
+    author: (fd.get('author') || 'me').trim().replace(/^@/, ''),
+    src: url,
   };
+  custom.push(item);
+  store.set('vibe.custom', custom);
+  videos.push(item);
 
-  renderProfile();
-
-  closeScreen(screens.edit);
-  showToast("Profile save ho gaya");
+  e.target.reset();
+  dlg.close();
+  tab = 'home';
+  $$('.bottombar button').forEach(x => x.classList.toggle('active', x.dataset.tab === 'home'));
+  render();
+  toast('Video add ho gaya 🎬');
 });
 
-// ===== Init =====
-$$(".reel").forEach(registerReel);
+/* ---------- PWA ---------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js').catch(() => {}));
+}
 
-state.postCount = $$(".reel").length;
-
-renderProfile();
-setActive($("#homeBtn"));
+render();
